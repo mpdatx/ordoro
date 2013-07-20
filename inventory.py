@@ -29,8 +29,19 @@ def connect_magento_store(store_id):
 def update_inventory(store_id, products):
     """Update inventory for a list of products for the given magento store."""
     client, session = connect_magento_store(store_id)
+    products_updated = []
+    products_errored = []
     for p in products:
-        client.service.catalogInventoryStockItemUpdate(session, p['product_id'], {'qty': p['qty']})
+        try:
+            if client.service.catalogInventoryStockItemUpdate(session, p['product_id'], {'qty': p['qty']}) == 1:
+                products_updated.append(p['product_id'])
+            else:
+                products_errored.append(p['product_id'])
+        except:
+            products_errored.append(p['product_id'])
+
+    return products_updated, products_errored
 
 if __name__ == '__main__':
-    update_inventory('demo', [{'product_id':16, 'qty':995}])
+    updated, errored = update_inventory('demo', [{'product_id':161, 'qty':995}, {'product_id':1611111, 'qty':995}])
+    print '%s products updated, %s errors.' % (len(updated), len(errored))
