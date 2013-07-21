@@ -1,3 +1,5 @@
+"""Interact with magento store inventory records."""
+
 from suds.client import Client
 from eventlet import GreenPool, monkey_patch
 
@@ -37,7 +39,7 @@ def update_inventory(store_id, products, async=False, max_connections=15, retry=
 
     Keyword arguments:
     store_id -- The store_id passed to connect_magento_store
-    products -- A list of product dicts, each of whic must contain an entry for cart_prod_id and qty
+    products -- A list of product dicts, each of which must contain an entry for cart_prod_id and qty
     async -- If True, make the API calls concurrently with eventlet
     max_connections -- If calling asynchronously, the max number of concurrent connections
     retry -- Should we retry failed async calls?  These often fail due to SQL deadlocks caused by calling
