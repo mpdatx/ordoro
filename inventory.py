@@ -57,6 +57,7 @@ def update_inventory(store_id, products, async=False, max_connections=15, retry=
     client, session = connect_magento_store(store_id)
     products_updated = []
     products_errored = []
+    retry_count = 0
 
     def api_call(product_id, qty):
         try:
@@ -71,24 +72,21 @@ def update_inventory(store_id, products, async=False, max_connections=15, retry=
         else:
             products_errored.append(id)
 
-    if async:
-        pool = GreenPool(max_connections)
-        monkey_patch()
-
-    for p in products:
-        if async:
-            pool.spawn(api_call, p['cart_prod_id'], p['qty']).link(callback, p['cart_prod_id'])
-        else:
+    if not async:
+        for p in products:
             if api_call(p['cart_prod_id'], p['qty']) == 1:
                 products_updated.append(p['cart_prod_id'])
             else:
                 products_errored.append(p['cart_prod_id'])
+        return products_updated, products_errored, retry_count
 
-    if async:
-        pool.waitall()
+    pool = GreenPool(max_connections)
+    monkey_patch()
+    for p in products:
+        pool.spawn(api_call, p['cart_prod_id'], p['qty']).link(callback, p['cart_prod_id'])
+    pool.waitall()
 
-    retry_count = 0
-    if async and retry and len(products_errored) > 0:
+    if retry and len(products_errored) > 0:
         product_dict = dict(zip([x['cart_prod_id'] for x in products], [x['qty'] for x in products]))
         while (len(products_errored) > 0) and (retry_count < len(products)*2): # @todo tweak the retry count
             for index, product_id in enumerate(products_errored):
