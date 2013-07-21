@@ -89,12 +89,13 @@ def update_inventory(store_id, products, async=False, max_connections=15, retry=
 
     retry_count = 0
     if async and retry and len(products_errored) > 0:
+        product_dict = dict(zip([x['cart_prod_id'] for x in products], [x['qty'] for x in products]))
         while (len(products_errored) > 0) and (retry_count < len(products)*2): # @todo tweak the retry count
-            for p in products:
-                if p['cart_prod_id'] in products_errored:
-                    products_errored.pop( products_errored.index(p['cart_prod_id']))
-                    retry_count += 1
-                    pool.spawn(api_call, p['cart_prod_id'], p['qty']).link(callback, p['cart_prod_id'])
+            for index, product_id in enumerate(products_errored):
+                qty = product_dict[product_id]
+                products_errored.pop(index)
+                retry_count += 1
+                pool.spawn(api_call, product_id, qty).link(callback, product_id)
             pool.waitall()
 
     return products_updated, products_errored, retry_count
