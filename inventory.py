@@ -34,6 +34,12 @@ def connect_magento_store(store_id):
     session = client.service.login(store['username'], store['api_key'])
     return client, session
 
+def get_inventory(store_id, product_id_list):
+    """Get the inventory quantities for a list of product ids."""
+    client, session = connect_magento_store(store_id)
+    return client.service.catalogInventoryStockItemList(session, product_id_list)
+
+
 def update_inventory(store_id, products, async=False, max_connections=15, retry=True):
     """Update inventory for a list of products for the given magento store.
 
