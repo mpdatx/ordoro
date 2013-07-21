@@ -1,4 +1,5 @@
 from suds.client import Client
+from eventlet import GreenPool
 
 def get_api_products():
     """Return a sample list of products."""
@@ -26,19 +27,39 @@ def connect_magento_store(store_id):
     session = client.service.login(store['username'], store['api_key'])
     return client, session
 
-def update_inventory(store_id, products):
+def update_inventory(store_id, products, async=False, max_connections=10):
     """Update inventory for a list of products for the given magento store."""
     client, session = connect_magento_store(store_id)
     products_updated = []
     products_errored = []
-    for p in products:
+
+    def api_call(product_id, qty):
         try:
-            if client.service.catalogInventoryStockItemUpdate(session, p['product_id'], {'qty': p['qty']}) == 1:
+            return client.service.catalogInventoryStockItemUpdate(session, product_id, {'qty':qty})
+        except:
+           return 0
+
+    def callback(thread, id):
+        result = thread.wait()
+        if result:
+            products_updated.append(id)
+        else:
+            products_errored.append(id)
+
+    if async:
+        pool = GreenPool(max_connections)
+
+    for p in products:
+        if async:
+            pool.spawn(api_call, p['product_id'], p['qty']).link(callback, p['product_id'])
+        else:
+            if api_call(p['product_id'], p['qty']) == 1:
                 products_updated.append(p['product_id'])
             else:
                 products_errored.append(p['product_id'])
-        except:
-            products_errored.append(p['product_id'])
+
+    if async:
+        pool.waitall()
 
     return products_updated, products_errored
 
