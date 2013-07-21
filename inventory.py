@@ -87,5 +87,7 @@ def update_inventory(store_id, products, async=False, max_connections=15, retry=
     return products_updated, products_errored, retry_count
 
 if __name__ == '__main__':
-    updated, errored = update_inventory('demo', [{'product_id':161, 'qty':995}, {'product_id':1611111, 'qty':995}])
-    print '%s products updated, %s errors.' % (len(updated), len(errored))
+    to_update = get_api_products()
+    print 'Updating %d products' % (len(to_update))
+    updated, errored, retries = update_inventory('demo', to_update)
+    print '%s products updated, %s errors, %s retries.' % (len(updated), len(errored), retries)
