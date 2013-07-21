@@ -10,7 +10,12 @@ def get_api_products():
     ]
 
 def connect_magento_store(store_id):
-    """Connects and logs in to a magento store via SOAP."""
+    """Connects and logs in to a magento store via SOAP.
+
+    Keyword arguments:
+    store_id -- identifies a Magento store instance uniquely
+
+    """
     stores = {
         'demo': {
             'url': 'https://ordorodemo.gostorego.com/api/v2_soap?wsdl=1',
